@@ -20,7 +20,7 @@ RUN mkdir -p /app/uploads && chmod 755 /app/uploads
 
 # Add wait script for MySQL
 COPY wait-for-mysql.sh /app/wait-for-mysql.sh
-RUN chmod +x /app/wait-for-mysql.sh
+RUN chmod 777 /app/wait-for-mysql.sh
 
 # Copy application code
 COPY . .
