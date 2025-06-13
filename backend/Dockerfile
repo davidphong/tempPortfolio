@@ -36,4 +36,4 @@ USER appuser
 EXPOSE 7331
 
 # Start application with entrypoint
-CMD ["./wait-for-mysql.sh", "db", "3370", "python", "app.py"] 
+CMD ["sh", "./wait-for-mysql.sh", "db", "3370", "python", "app.py"]
