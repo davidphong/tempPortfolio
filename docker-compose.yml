@@ -1,0 +1,95 @@
+version: '3'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "9745:9745"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - ./frontend/.env:/app/.env
+    environment:
+      - PORT=9745
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+      - nginx
+    networks:
+      - portfolio-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+    networks:
+      - portfolio-network
+
+  backend:
+    build:
+      context: ./backend
+    expose:
+      - "7331"
+    ports:
+      - "7331:7331"
+    volumes:
+      - ./backend:/app
+      - ./backend/uploads:/app/uploads
+      - ./uploads:/app/uploads
+    environment:
+      - PORT=7331
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - API_HOST=0.0.0.0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-jwt-secret-key}
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key}
+      - BASE_URL=${BASE_URL:-http://localhost}
+    depends_on:
+      - db
+    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 10
+        window: 120s
+    networks:
+      - portfolio-network
+
+  db:
+    image: mysql:8.0
+    expose:
+      - "3370"
+    ports:
+      - "3370:3370"
+    command: --port=3370
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
+      - MYSQL_DATABASE=portfolio
+      - MYSQL_USER=${MYSQL_USER:-user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-password}
+      - MYSQL_TCP_PORT=3370
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - portfolio-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-P", "3370", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  portfolio-network:
+    driver: bridge
+
+volumes:
+  mysql-data: 
