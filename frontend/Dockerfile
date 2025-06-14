@@ -8,8 +8,9 @@ COPY package.json ./
 # Install dependencies
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy source code directories
+COPY public/ ./public/
+COPY src/ ./src/
 
 # Create .env file with API URL configuration
 RUN echo "REACT_APP_API_URL=/api" > .env
