@@ -1,26 +1,53 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import './AuthPages.css';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  
   const { login, loading, error, clearError } = useAuthStore();
-  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     clearError();
     
-    if (!email || !password) {
+    console.log('🔐 Login: Form submitted with email:', formData.email);
+    
+    // Validate required fields
+    if (!formData.email || !formData.password) {
+      console.error('❌ Login: Missing required fields');
       return;
     }
     
-    const success = await login(email, password);
-    if (success) {
-      navigate('/profile-settings');
+    console.log('🚀 Login: Calling auth store login...');
+    
+    try {
+      const success = await login(formData.email, formData.password);
+      console.log('📊 Login: Login result:', success);
+      
+      if (success) {
+        console.log('✅ Login: Login successful, redirecting...');
+        // Force reload to ensure clean state
+        window.location.href = '/profile-settings';
+      } else {
+        console.log('❌ Login: Login failed - handled by auth store');
+      }
+    } catch (error) {
+      console.error('❌ Login: Unexpected error:', error);
     }
+  };
+
+  const isFormValid = () => {
+    return formData.email && formData.password;
   };
 
   return (
@@ -57,15 +84,21 @@ const Login = () => {
           </div>
 
           <form className="auth-form" onSubmit={handleSubmit}>
-            {error && <div className="error-message">{error}</div>}
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
             
             <div className="form-group">
               <input
                 type="email"
                 className="form-control"
                 placeholder="Enter email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
               />
             </div>
             
@@ -74,8 +107,10 @@ const Login = () => {
                 type="password"
                 className="form-control"
                 placeholder="Enter a password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
               />
             </div>
             
@@ -86,7 +121,7 @@ const Login = () => {
             <button 
               type="submit" 
               className="btn btn-primary btn-block" 
-              disabled={loading}
+              disabled={loading || !isFormValid()}
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </button>

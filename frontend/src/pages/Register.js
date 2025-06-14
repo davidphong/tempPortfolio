@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import './AuthPages.css';
 
 const Register = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: ''
+  });
   const [passwordRequirements, setPasswordRequirements] = useState({
     lowercase: false,
     special: false,
@@ -13,8 +16,8 @@ const Register = () => {
     length: false,
     number: false
   });
+  
   const { register, loading, error, clearError } = useAuthStore();
-  const navigate = useNavigate();
 
   const checkPasswordRequirements = (password) => {
     setPasswordRequirements({
@@ -26,30 +29,60 @@ const Register = () => {
     });
   };
 
-  const handlePasswordChange = (e) => {
-    const newPassword = e.target.value;
-    setPassword(newPassword);
-    checkPasswordRequirements(newPassword);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'password') {
+      checkPasswordRequirements(value);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     clearError();
     
-    if (!email || !password) {
+    console.log('📝 Register: Form submitted with data:', {
+      email: formData.email,
+      name: formData.name,
+      hasPassword: !!formData.password
+    });
+    
+    // Validate required fields
+    if (!formData.email || !formData.password) {
+      console.error('❌ Register: Missing required fields');
       return;
     }
     
     // Check if all password requirements are met
     const allRequirementsMet = Object.values(passwordRequirements).every(req => req);
     if (!allRequirementsMet) {
+      console.error('❌ Register: Password requirements not met');
       return;
     }
     
-    const success = await register(email, password);
-    if (success) {
-      navigate('/profile-settings');
+    console.log('🚀 Register: Calling auth store register...');
+    
+    try {
+      const success = await register(formData.email, formData.password, formData.name);
+      console.log('📊 Register: Registration result:', success);
+      
+      if (success) {
+        console.log('✅ Register: Registration successful, redirecting...');
+        // Force reload to ensure clean state
+        window.location.href = '/profile-settings';
+      } else {
+        console.log('❌ Register: Registration failed - handled by auth store');
+      }
+    } catch (error) {
+      console.error('❌ Register: Unexpected error:', error);
     }
+  };
+
+  const isFormValid = () => {
+    return formData.email && 
+           formData.password && 
+           Object.values(passwordRequirements).every(req => req);
   };
 
   return (
@@ -86,16 +119,32 @@ const Register = () => {
           </div>
 
           <form className="auth-form" onSubmit={handleSubmit}>
-            {error && <div className="error-message">{error}</div>}
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
             
             <div className="form-group">
               <input
                 type="email"
                 className="form-control"
                 placeholder="Enter email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
                 required
+              />
+            </div>
+            
+            <div className="form-group">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Enter your name (optional)"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
               />
             </div>
             
@@ -104,8 +153,9 @@ const Register = () => {
                 type="password"
                 className="form-control"
                 placeholder="Enter a password"
-                value={password}
-                onChange={handlePasswordChange}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
                 required
               />
             </div>
@@ -125,7 +175,7 @@ const Register = () => {
               </div>
               <div className={`requirement ${passwordRequirements.length ? 'met' : ''}`}>
                 <div className="requirement-icon"></div>
-                <span>8 character minium</span>
+                <span>8 character minimum</span>
               </div>
               <div className={`requirement ${passwordRequirements.number ? 'met' : ''}`}>
                 <div className="requirement-icon"></div>
@@ -136,7 +186,7 @@ const Register = () => {
             <button 
               type="submit" 
               className="btn btn-primary btn-block" 
-              disabled={loading || !Object.values(passwordRequirements).every(req => req)}
+              disabled={loading || !isFormValid()}
             >
               {loading ? 'Creating Account...' : 'Create account'}
             </button>

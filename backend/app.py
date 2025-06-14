@@ -46,8 +46,15 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Initialize extensions but delay connecting to DB
 db = SQLAlchemy()
 
-# Configure CORS to allow all origins
-cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+# Configure CORS to allow frontend origin specifically
+cors = CORS(app, 
+    resources={r"/api/*": {
+        "origins": ["http://localhost:9745", "http://localhost"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
+    }}
+)
 
 jwt = JWTManager(app)
 mail = Mail(app)
@@ -172,15 +179,25 @@ def handle_unprocessable_entity(err):
 # Routes
 @app.route('/api/user/signup', methods=['POST'])
 def signup():
-    data = request.json
-    logger.info(f"Received signup request: {data}")
-    
     try:
+        data = request.json
+        logger.info(f"Received signup request: {data}")
+        
+        # Validate required fields
+        if not data or not data.get('email') or not data.get('password'):
+            return jsonify({
+                'success': False,
+                'error': 'Email and password are required'
+            }), 400
+        
         # Check if email already exists
         existing_user = User.query.filter_by(email=data['email']).first()
         if existing_user:
             logger.warning(f"Signup failed: Email {data['email']} already registered")
-            return jsonify({'error': 'Email already registered'}), 409
+            return jsonify({
+                'success': False,
+                'error': 'Email already registered'
+            }), 409
         
         # Create new user
         hashed_password = hash_password(data['password'])
@@ -200,44 +217,75 @@ def signup():
         # Generate access token
         access_token = create_access_token(identity=new_user.id)
         
-        return jsonify({
+        response_data = {
+            'success': True,
             'message': 'User created successfully',
-            'token': access_token,
-            'user': {
-                'id': new_user.id,
-                'email': new_user.email,
-                'name': new_user.name
+            'data': {
+                'token': access_token,
+                'user': {
+                    'id': new_user.id,
+                    'email': new_user.email,
+                    'name': new_user.name
+                }
             }
-        }), 201
+        }
+        
+        logger.info(f"Sending successful signup response: {response_data}")
+        return jsonify(response_data), 201
+        
     except Exception as e:
         logger.error(f"Error during signup: {str(e)}")
         db.session.rollback()
-        return jsonify({'error': f'Signup failed: {str(e)}'}), 500
+        return jsonify({
+            'success': False,
+            'error': f'Registration failed: {str(e)}'
+        }), 500
 
 @app.route('/api/user/login', methods=['POST'])
 def login():
     try:
         data = request.json
+        logger.info(f"Received login request for email: {data.get('email')}")
+        
+        # Validate required fields
+        if not data or not data.get('email') or not data.get('password'):
+            return jsonify({
+                'success': False,
+                'error': 'Email and password are required'
+            }), 400
         
         user = User.query.filter_by(email=data['email']).first()
         if not user or not check_password(user.password, data['password']):
-            return jsonify({'error': 'Invalid email or password'}), 401
+            return jsonify({
+                'success': False,
+                'error': 'Invalid email or password'
+            }), 401
         
         # Generate access token
         access_token = create_access_token(identity=user.id)
-        logger.info(f"Generated token for user {user.id}: {access_token}")
+        logger.info(f"Generated token for user {user.id}")
         
-        return jsonify({
-            'token': access_token,
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'name': user.name
+        response_data = {
+            'success': True,
+            'message': 'Login successful',
+            'data': {
+                'token': access_token,
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'name': user.name
+                }
             }
-        }), 200
+        }
+        
+        return jsonify(response_data), 200
+        
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': 'Login failed'
+        }), 500
 
 @app.route('/api/user/forgot-password', methods=['POST'])
 def forgot_password():
