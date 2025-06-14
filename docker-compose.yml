@@ -5,22 +5,13 @@ services:
     build:
       context: ./frontend
     ports:
-      - "9745:9745"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - ./frontend/.env:/app/.env
+      - "9745:80"
     environment:
-      - PORT=9745
-      - NODE_ENV=development
-      - CHOKIDAR_USEPOLLING=true
+      - NODE_ENV=production
     depends_on:
       - backend
-      - nginx
     networks:
       - portfolio-network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   nginx:
     image: nginx:alpine

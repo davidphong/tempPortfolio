@@ -1,11 +1,27 @@
 import axios from 'axios';
 
-// Configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost/api';
+// Configuration - Dynamic API URL based on environment
+const getApiBaseUrl = () => {
+  // For production, use relative URL to work with any domain
+  if (process.env.NODE_ENV === 'production') {
+    return '/api';
+  }
+  
+  // For development, check if we have a custom API URL
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // Default for development
+  return '/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 console.log('=== API Configuration ===');
 console.log('API Base URL:', API_BASE_URL);
 console.log('Environment:', process.env.NODE_ENV);
+console.log('Window location:', typeof window !== 'undefined' ? window.location.origin : 'N/A');
 
 // Create axios instance
 const api = axios.create({

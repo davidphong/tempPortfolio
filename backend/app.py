@@ -46,10 +46,15 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Initialize extensions but delay connecting to DB
 db = SQLAlchemy()
 
-# Configure CORS to allow frontend origin specifically
+# Configure CORS to allow both development and production origins
 cors = CORS(app, 
     resources={r"/api/*": {
-        "origins": ["http://localhost:9745", "http://localhost"],
+        "origins": [
+            "http://localhost:9745", 
+            "http://localhost",
+            "http://139.180.134.91:9745",
+            "http://139.180.134.91"
+        ],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
         "supports_credentials": True
