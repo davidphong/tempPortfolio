@@ -2,14 +2,23 @@ import axios from 'axios';
 
 // Configuration - Dynamic API URL based on environment
 const getApiBaseUrl = () => {
-  // For production, use relative URL to work with any domain
-  if (process.env.NODE_ENV === 'production') {
-    return '/api';
-  }
-  
-  // For development, check if we have a custom API URL
+  // Check for environment variable first
   if (process.env.REACT_APP_API_URL) {
     return process.env.REACT_APP_API_URL;
+  }
+  
+  // For production, construct full URL based on current location
+  if (process.env.NODE_ENV === 'production') {
+    const currentOrigin = window.location.origin;
+    console.log('🌐 Production mode - current origin:', currentOrigin);
+    
+    // If we're on production server, use full URL
+    if (currentOrigin.includes('139.180.134.91')) {
+      return `${currentOrigin}/api`;
+    }
+    
+    // Otherwise use relative URL (for nginx proxy)
+    return '/api';
   }
   
   // Default for development
