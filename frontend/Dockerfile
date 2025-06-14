@@ -25,13 +25,24 @@ FROM nginx:alpine
 # Copy built app from builder stage
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Create simple nginx config for React SPA
+# Create nginx config for React SPA with API proxy
 RUN echo 'server { \
     listen 80; \
+    \
+    # Serve React static files \
     location / { \
         root /usr/share/nginx/html; \
         index index.html index.htm; \
         try_files $uri $uri/ /index.html; \
+    } \
+    \
+    # Proxy API calls to backend via nginx service \
+    location /api/ { \
+        proxy_pass http://nginx/api/; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $scheme; \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
