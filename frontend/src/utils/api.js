@@ -40,9 +40,9 @@ api.interceptors.request.use(
     
     // Add authorization header for protected endpoints
     if (!isAuthEndpoint) {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers['Authorization'] = `Bearer ${token}`;
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
         console.log('🔐 Added auth token to request');
       }
     } else {
@@ -102,8 +102,8 @@ api.interceptors.response.use(
         // Don't redirect if we're already on auth pages
         if (!window.location.pathname.includes('/login') && 
             !window.location.pathname.includes('/register')) {
-          window.location.href = '/login';
-        }
+        window.location.href = '/login';
+      }
       }
     } else if (error.request) {
       console.error('🌐 Network error - no response received:', error.request);
@@ -283,7 +283,7 @@ export const updateProfile = async (profileData) => {
     console.log('💾 Updating user profile...');
     
     // Handle FormData vs JSON
-    const isFormData = profileData instanceof FormData;
+  const isFormData = profileData instanceof FormData;
     const config = isFormData ? {
       headers: { 'Content-Type': 'multipart/form-data' }
     } : {};
@@ -313,7 +313,7 @@ export const addProject = async (projectData) => {
   try {
     console.log('➕ Adding new project...');
     
-    const isFormData = projectData instanceof FormData;
+  const isFormData = projectData instanceof FormData;
     const config = isFormData ? {
       headers: { 'Content-Type': 'multipart/form-data' }
     } : {};
@@ -329,7 +329,7 @@ export const updateProject = async (projectId, projectData) => {
   try {
     console.log(`✏️ Updating project ${projectId}...`);
     
-    const isFormData = projectData instanceof FormData;
+  const isFormData = projectData instanceof FormData;
     const config = isFormData ? {
       headers: { 'Content-Type': 'multipart/form-data' }
     } : {};

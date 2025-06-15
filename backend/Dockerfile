@@ -29,9 +29,9 @@ COPY . .
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Create non-root user for security
+# Create non-root user for security but run as root for file permissions
 RUN useradd -m appuser && chown -R appuser:appuser /app
-USER appuser
+# USER appuser  # Commented out to run as root for file upload permissions
 
 EXPOSE 7331
 

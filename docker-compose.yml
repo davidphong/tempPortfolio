@@ -34,8 +34,7 @@ services:
       - "7331:7331"
     volumes:
       - ./backend:/app
-      - ./backend/uploads:/app/uploads
-      - ./uploads:/app/uploads
+      - uploads-data:/app/uploads
     environment:
       - PORT=7331
       - MAIL_USERNAME=${MAIL_USERNAME}
@@ -85,3 +84,4 @@ networks:
 
 volumes:
   mysql-data: 
+  uploads-data: 

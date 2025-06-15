@@ -35,9 +35,11 @@ app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB max upload
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'your_email@gmail.com')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'your_app_password')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME', 'your_email@gmail.com')
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_DEBUG'] = True
 app.config['BASE_URL'] = os.environ.get('BASE_URL', 'http://localhost')
 
 # Ensure upload folder exists
@@ -144,31 +146,71 @@ def check_password(hashed_pw, password):
     return bcrypt.checkpw(password.encode('utf-8'), hashed_pw.encode('utf-8'))
 
 def send_password_reset_email(user):
-    token = str(uuid.uuid4())
-    expires_at = datetime.utcnow() + timedelta(hours=24)
-    
-    # Save token in database
-    reset = PasswordReset(user_id=user.id, token=token, expires_at=expires_at)
-    db.session.add(reset)
-    db.session.commit()
-    
-    # Get server base URL from config
-    base_url = app.config['BASE_URL']
-    
-    # Generate a reset link using dynamic base URL
-    reset_link = f"{base_url}/reset-password?token={token}"
-    
-    # Send email
-    subject = "Password Reset Request"
-    body = f"Click the link below to reset your password:\n\n{reset_link}\n\nThis link will expire in 24 hours."
-    
-    sender = app.config['MAIL_DEFAULT_SENDER']
-    msg = Message(subject=subject, recipients=[user.email], body=body, sender=sender)
     try:
+        # Kiểm tra cấu hình email
+        mail_username = app.config.get('MAIL_USERNAME')
+        mail_password = app.config.get('MAIL_PASSWORD')
+        mail_sender = app.config.get('MAIL_DEFAULT_SENDER')
+        
+        logger.info(f"📧 Email configuration check:")
+        logger.info(f"  - MAIL_USERNAME: {'✅ Set' if mail_username else '❌ Not set'}")
+        logger.info(f"  - MAIL_PASSWORD: {'✅ Set' if mail_password else '❌ Not set'}")
+        logger.info(f"  - MAIL_DEFAULT_SENDER: {'✅ Set' if mail_sender else '❌ Not set'}")
+        
+        if not mail_username or not mail_password:
+            raise Exception("Email credentials not configured in environment variables")
+        
+        token = str(uuid.uuid4())
+        expires_at = datetime.utcnow() + timedelta(hours=24)
+        
+        # Save token in database
+        reset = PasswordReset(user_id=user.id, token=token, expires_at=expires_at)
+        db.session.add(reset)
+        db.session.commit()
+        logger.info(f"🔐 Password reset token created for user {user.email}")
+        
+        # Get server base URL from config
+        base_url = app.config['BASE_URL']
+        
+        # Generate a reset link using dynamic base URL
+        reset_link = f"{base_url}/reset-password?token={token}"
+        
+        # Create email message
+        subject = "Password Reset Request - Portfolio App"
+        body = f"""Hello {user.name or user.email},
+
+You have requested to reset your password for your Portfolio account.
+
+Click the link below to reset your password:
+{reset_link}
+
+This link will expire in 24 hours for security reasons.
+
+If you did not request this password reset, please ignore this email.
+
+Best regards,
+Portfolio Team"""
+        
+        # Create Message with explicit sender
+        msg = Message(
+            subject=subject,
+            recipients=[user.email],
+            body=body,
+            sender=mail_sender
+        )
+        
+        logger.info(f"📤 Attempting to send email to {user.email}")
+        logger.info(f"📤 Using sender: {mail_sender}")
+        logger.info(f"📤 SMTP Server: {app.config['MAIL_SERVER']}:{app.config['MAIL_PORT']}")
+        
         mail.send(msg)
-        logger.info(f"Password reset email sent to {user.email}")
+        logger.info(f"✅ Password reset email sent successfully to {user.email}")
+        return True
+        
     except Exception as e:
-        logger.error(f"Failed to send password reset email: {str(e)}")
+        logger.error(f"❌ Failed to send password reset email: {str(e)}")
+        logger.error(f"❌ Error type: {type(e).__name__}")
+        return False
 
 # Application-wide error handler
 @app.errorhandler(422)
@@ -274,12 +316,12 @@ def login():
             'success': True,
             'message': 'Login successful',
             'data': {
-                'token': access_token,
-                'user': {
-                    'id': user.id,
-                    'email': user.email,
-                    'name': user.name
-                }
+            'token': access_token,
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'name': user.name
+            }
             }
         }
         
