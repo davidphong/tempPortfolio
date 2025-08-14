@@ -84,7 +84,7 @@ const Portfolio = () => {
             <div className="portfolio-avatar">
               {portfolio.user.profile_image ? (
                 <img 
-                  src={`${process.env.REACT_APP_API_URL || 'http://localhost:7331'}/uploads/${portfolio.user.profile_image}`} 
+                  src={`${process.env.REACT_APP_API_URL || window.location.origin}/uploads/${portfolio.user.profile_image}`} 
                   alt={portfolio.user.name} 
                 />
               ) : (
@@ -121,7 +121,7 @@ const Portfolio = () => {
                   <div className="project-image">
                     {project.image ? (
                       <img 
-                        src={`${process.env.REACT_APP_API_URL || 'http://localhost:7331'}/uploads/${project.image}`} 
+                        src={`${process.env.REACT_APP_API_URL || window.location.origin}/uploads/${project.image}`} 
                         alt={project.name} 
                       />
                     ) : (

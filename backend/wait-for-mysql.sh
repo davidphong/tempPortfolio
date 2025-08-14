@@ -15,4 +15,4 @@ until mysqladmin ping -h "$host" -P "$port" --silent; do
 done
 
 >&2 echo "MySQL is up - executing command"
-exec $cmd 
+exec $cmd

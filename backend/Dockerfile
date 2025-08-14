@@ -18,9 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Create uploads directory
 RUN mkdir -p /app/uploads && chmod 755 /app/uploads
 
-# Add wait script for MySQL
-COPY wait-for-mysql.sh /app/wait-for-mysql.sh
-RUN chmod 777 /app/wait-for-mysql.sh
+# Add wait script for MySQL (Python version - no line ending issues)
+COPY wait_for_mysql.py /app/wait_for_mysql.py
+RUN chmod +x /app/wait_for_mysql.py
 
 # Copy application code
 COPY . .
@@ -35,5 +35,5 @@ RUN useradd -m appuser && chown -R appuser:appuser /app
 
 EXPOSE 7331
 
-# Start application with entrypoint
-CMD ["sh", "./wait-for-mysql.sh", "db", "3370", "python", "app.py"]
+# Start application with Python wait script
+CMD ["python", "wait_for_mysql.py", "db", "3370", "python", "app.py"]

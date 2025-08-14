@@ -49,14 +49,28 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 db = SQLAlchemy()
 
 # Configure CORS to allow both development and production origins
+def get_cors_origins():
+    """Get CORS origins from environment or use defaults"""
+    base_url = os.environ.get('BASE_URL', 'http://localhost')
+    origins = [
+        "http://localhost:9745", 
+        "http://localhost",
+        "http://139.180.134.91:9745",
+        "http://139.180.134.91"
+    ]
+    
+    # Add BASE_URL if it's different from defaults
+    if base_url not in origins:
+        origins.append(base_url)
+        # Also add with port 9745 if BASE_URL doesn't have it
+        if ':9745' not in base_url:
+            origins.append(f"{base_url}:9745")
+    
+    return origins
+
 cors = CORS(app, 
     resources={r"/api/*": {
-        "origins": [
-            "http://localhost:9745", 
-            "http://localhost",
-            "http://139.180.134.91:9745",
-            "http://139.180.134.91"
-        ],
+        "origins": get_cors_origins(),
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
         "supports_credentials": True

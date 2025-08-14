@@ -37,8 +37,9 @@ const ProfileSettings = () => {
       });
       
       if (profile.profile_image) {
-        // Use same base URL as API calls
-        setImagePreview(`http://localhost/uploads/${profile.profile_image}`);
+        // Use same base URL as API calls - support production deployment
+        const baseUrl = process.env.REACT_APP_API_URL || window.location.origin;
+        setImagePreview(`${baseUrl}/uploads/${profile.profile_image}`);
       }
     }
   }, [profile]);

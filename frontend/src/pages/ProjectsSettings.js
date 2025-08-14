@@ -48,7 +48,7 @@ const ProjectsSettings = () => {
     });
     
     if (project.image) {
-      setImagePreview(`${process.env.REACT_APP_API_URL || 'http://localhost:7331'}/uploads/${project.image}`);
+      setImagePreview(`${process.env.REACT_APP_API_URL || window.location.origin}/uploads/${project.image}`);
     } else {
       setImagePreview(null);
     }
@@ -145,7 +145,7 @@ const ProjectsSettings = () => {
                 <div className="project-image">
                   {project.image ? (
                     <img 
-                      src={`${process.env.REACT_APP_API_URL || 'http://localhost:7331'}/uploads/${project.image}`} 
+                      src={`${process.env.REACT_APP_API_URL || window.location.origin}/uploads/${project.image}`} 
                       alt={project.name} 
                     />
                   ) : (
